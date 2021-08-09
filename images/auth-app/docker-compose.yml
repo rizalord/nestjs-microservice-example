@@ -1,0 +1,9 @@
+version: '3.9'
+services:
+  auth_service:
+    container_name: auth-container
+    image: auth-service:1.0
+    ports:
+      - 3000:3000
+    environment:
+      - DATABASE_STRING=mongodb://mongo-server:3hZL0GIil7xtVwqLOTtpSPggIfbpJuyyvvH17OGpdcqy3Z4ZldMxgEsKgyllU1a3BQtCPMQhkGlEupk14X6tuA==@mongo-server.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@mongo-server@

@@ -1,0 +1,9 @@
+version: '3.9'
+services:
+  auth_service:
+    container_name: blog-container
+    image: blog-service:1.0
+    ports:
+      - 3001:3001
+    environment:
+      - DATABASE_STRING=mongodb://mongo-server:3hZL0GIil7xtVwqLOTtpSPggIfbpJuyyvvH17OGpdcqy3Z4ZldMxgEsKgyllU1a3BQtCPMQhkGlEupk14X6tuA==@mongo-server.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@mongo-server@
