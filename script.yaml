@@ -1,0 +1,157 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: env-secret
+stringData:
+  DATABASE_STRING: "mongodb://mongo-server:3hZL0GIil7xtVwqLOTtpSPggIfbpJuyyvvH17OGpdcqy3Z4ZldMxgEsKgyllU1a3BQtCPMQhkGlEupk14X6tuA==@mongo-server.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@mongo-server@"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service-deployment
+  labels:
+    name: auth-service-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      name: auth-app
+  template:
+    metadata:
+      name: auth-app
+      labels:
+        name: auth-app
+    spec:
+      containers:
+        - name: auth-container
+          image: rizalord/nest-auth-app:1.0
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - secretRef:
+                name: env-secret
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blog-service-deployment
+  labels:
+    name: blog-service-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      name: blog-app
+  template:
+    metadata:
+      name: blog-app
+      labels:
+        name: blog-app
+    spec:
+      containers:
+        - name: blog-container
+          image: rizalord/nest-blog-app:1.0
+          ports:
+            - containerPort: 3001
+          envFrom:
+            - secretRef:
+                name: env-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+spec:
+  selector:
+    name: auth-app
+  ports:
+    - port: 3000
+      targetPort: 3000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blog-service
+spec:
+  selector:
+    name: blog-app
+  ports:
+    - port: 3001
+      targetPort: 3001
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-with-auth
+  annotations:
+    nginx.ingress.kubernetes.io/auth-url: http://ingress.local/auth/authenticate
+    nginx.ingress.kubernetes.io/auth-response-headers: user
+    # nginx.ingress.kubernetes.io/enable-cors: "true"
+    # nginx.ingress.kubernetes.io/cors-allow-methods: "POST"
+  labels:
+    name: ingress-with-auth
+spec:
+  rules:
+    - host: ingress.local
+      http:
+        paths:
+          - path: /blogs/create
+            pathType: Exact
+            backend:
+              service:
+                name: blog-service
+                port:
+                  number: 3001
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-no-auth
+  labels:
+    name: ingress-no-auth
+spec:
+  rules:
+    - host: ingress.local
+      http:
+        paths:
+          - path: /auth/login
+            pathType: Exact
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 3000
+          - path: /auth/register
+            pathType: Exact
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 3000
+          - path: /auth/refresh
+            pathType: Exact
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 3000
+          - path: /auth/authenticate
+            pathType: Exact
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 3000
+          - path: /blogs
+            pathType: Exact
+            backend:
+              service:
+                name: blog-service
+                port:
+                  number: 3001
